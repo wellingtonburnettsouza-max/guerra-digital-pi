@@ -3,362 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="pi-network-scope" content="/">
     <title>Guerra Digital Pi — FPS</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
         body {
-            background: linear-gradient(135deg, #0f0f23, #1a1a3a);
+            background: linear-gradient(135deg, #0f0f0f, #1a1a1a);
             color: white;
             min-height: 100vh;
-            text-align: center;
-            padding: 20px;
+            overflow: hidden;
         }
-        .container { max-width: 900px; margin: 0 auto; }
-        h1 {
-            color: #00ffff;
-            text-shadow: 0 0 15px #00ffff;
-            margin: 20px 0;
-            font-size: 2.2rem;
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
         }
-        .game-area {
-            background: rgba(0,0,0,0.6);
-            border: 2px solid #00ffff;
-            border-radius: 12px;
-            padding: 30px;
-            margin: 20px 0;
-            min-height: 400px;
+        /* Visão de fundo do jogo */
+        .game-view {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #111 0%, #222 100%);
+            position: relative;
         }
-        .status {
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 25px;
+        /* Mira no centro */
+        .crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #ffd700;
+            pointer-events: none;
         }
-        .stat-box {
-            background: rgba(0,255,255,0.1);
-            border: 1px solid #00ffff;
-            border-radius: 8px;
-            padding: 10px 20px;
-        }
-        .weapons {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 15px;
-            margin: 25px 0;
-        }
+        /* Arma em primeira pessoa */
         .weapon {
-            background: rgba(255,215,0,0.1);
-            border: 2px solid #ffd700;
+            position: absolute;
+            bottom: 0;
+            right: 15%;
+            width: 300px;
+            height: 200px;
+            background: linear-gradient(90deg, #444, #666);
+            border-radius: 6px 6px 0 0;
+            border: 3px solid #ffd700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #ffd700;
+            text-align: center;
+        }
+        /* Interface de armas / loja */
+        .shop {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.75);
+            padding: 15px;
             border-radius: 10px;
-            padding: 15px 10px;
-            cursor: pointer;
-            transition: 0.3s;
+            border: 2px solid #ffd700;
+            max-width: 280px;
         }
-        .weapon:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 12px #ffd700;
+        .shop h2 {
+            color: #ffd700;
+            margin-bottom: 12px;
+            font-size: 18px;
         }
-        .weapon h3 { color: #ffd700; font-size: 1rem; margin-bottom: 8px; }
-        .weapon .price { color: #00ff99; font-weight: bold; font-size: 0.9rem; }
-        .btn {
-            background: linear-gradient(90deg, #00c3ff, #00ff99);
-            color: #000;
-            border: none;
-            padding: 15px 40px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-top: 25px;
-            transition: 0.3s;
-        }
-        .btn:hover { transform: scale(1.08); }
-        .btn-pi {
-            background: linear-gradient(90deg, #673ab7, #9c27b0);
-            color: white;
-            margin-top: 15px;
-        }
-        .hidden { display: none; }
-        #gameUI { margin-top: 30px; }
-        .enemy-status {
-            color: #ff4444;
-            border: 1px solid #ff4444;
+        .weapon-item {
+            background: #222;
+            margin: 8px 0;
             padding: 10px;
             border-radius: 6px;
-            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .controls {
-            margin-top: 20px;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            max-width: 300px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .ctrl-btn {
-            background: #222;
-            border: 2px solid #00ffff;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 1.2rem;
+        .buy-btn {
+            background: #ffd700;
+            color: #000;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: bold;
             cursor: pointer;
+            transition: 0.2s;
         }
-        .ctrl-btn:active { background: #00ffff; color: #000; }
-        .d-pad { grid-column: span 3; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .buy-btn:hover {
+            background: #fff;
+        }
+        .pi-balance {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.75);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 2px solid #ffd700;
+            font-size: 16px;
+        }
+        .status {
+            position: absolute;
+            bottom: 220px;
+            left: 20px;
+            background: rgba(0,0,0,0.75);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>⚔️ GUERRA DIGITAL PI ⚔️</h1>
-
-        <!-- Tela de Login -->
-        <div id="loginScreen" class="game-area">
-            <h2>Bem-vindo Soldado!</h2>
-            <p>Conecte sua carteira Pi para entrar no campo de batalha</p>
-            <br>
-            <button class="btn btn-pi" onclick="loginWithPi()">🔑 Entrar com Pi</button>
-            <p id="loginStatus" style="margin-top:15px;color:#00ff99;"></p>
+    <div class="game-container">
+        <!-- Saldo Pi -->
+        <div class="pi-balance">
+            💰 Pi: <span id="balance">100</span> π
         </div>
 
-        <!-- Tela do Jogo -->
-        <div id="gameScreen" class="game-area hidden">
-            <div class="status">
-                <div class="stat-box">
-                    <strong>💰 Pi</strong><br>
-                    <span id="piBalance">100</span>
-                </div>
-                <div class="stat-box">
-                    <strong>❤️ Vida</strong><br>
-                    <span id="health">100</span>/100
-                </div>
-                <div class="stat-box">
-                    <strong>🎯 Pontos</strong><br>
-                    <span id="score">0</span>
-                </div>
-                <div class="stat-box">
-                    <strong>🔫 Arma</strong><br>
-                    <span id="currentWeapon">Nenhuma</span>
-                </div>
-            </div>
+        <!-- Visão do jogo -->
+        <div class="game-view">
+            <div class="crosshair">+</div>
+        </div>
 
-            <div id="enemyArea" class="enemy-status hidden">
-                <h3>⚠️ INIMIGO AVISTADO!</h3>
-                <p id="enemyName"></p>
-                <p>Vida inimigo: <span id="enemyHP">100</span>%</p>
+        <!-- Loja de Armas -->
+        <div class="shop">
+            <h2>Armas Disponíveis</h2>
+            <div class="weapon-item">
+                <span>Pistola</span>
+                <span>15 π</span>
+                <button class="buy-btn" onclick="comprar('Pistola', 15)">Comprar</button>
             </div>
-
-            <h3>Armas Disponíveis</h3>
-            <div class="weapons">
-                <div class="weapon" onclick="buyWeapon('pistol', 5)">
-                    <h3>🔫 Pistola</h3>
-                    <p class="price">5 π</p>
-                </div>
-                <div class="weapon" onclick="buyWeapon('rifle', 15)">
-                    <h3>🎯 Rifle</h3>
-                    <p class="price">15 π</p>
-                </div>
-                <div class="weapon" onclick="buyWeapon('sniper', 30)">
-                    <h3>🎯 Sniper</h3>
-                    <p class="price">30 π</p>
-                </div>
-                <div class="weapon" onclick="buyWeapon('rocket', 50)">
-                    <h3>🚀 Lança-Foguete</h3>
-                    <p class="price">50 π</p>
-                </div>
+            <div class="weapon-item">
+                <span>Fuzil</span>
+                <span>40 π</span>
+                <button class="buy-btn" onclick="comprar('Fuzil', 40)">Comprar</button>
             </div>
-
-            <button class="btn" onclick="startBattle()">⚔️ LUTAR!</button>
-            <p id="gameMessage" style="margin-top:20px;"></p>
-
-            <!-- Controles de Movimento -->
-            <div class="controls">
-                <div class="d-pad">
-                    <div></div>
-                    <button class="ctrl-btn" onmousedown="move('up')" ontouchstart="move('up')">↑</button>
-                    <div></div>
-                    <button class="ctrl-btn" onmousedown="move('left')" ontouchstart="move('left')">←</button>
-                    <button class="ctrl-btn" onmousedown="shoot()" ontouchstart="shoot()">🔫</button>
-                    <button class="ctrl-btn" onmousedown="move('right')" ontouchstart="move('right')">→</button>
-                    <div></div>
-                    <button class="ctrl-btn" onmousedown="move('down')" ontouchstart="move('down')">↓</button>
-                    <div></div>
-                </div>
+            <div class="weapon-item">
+                <span>Espingarda</span>
+                <span>60 π</span>
+                <button class="buy-btn" onclick="comprar('Espingarda', 60)">Comprar</button>
             </div>
+            <div class="weapon-item">
+                <span>Martelo (Jackhammer)</span>
+                <span>80 π</span>
+                <button class="buy-btn" onclick="comprar('Martelo', 80)">Comprar</button>
+            </div>
+        </div>
+
+        <!-- Arma em mão -->
+        <div class="weapon" id="armaAtual">
+            Nenhuma arma
+        </div>
+
+        <!-- Status -->
+        <div class="status" id="status">
+            Bem-vindo! Compre uma arma para lutar.
         </div>
     </div>
 
     <script>
-        // Dados do jogador
-        let player = {
-            piBalance: 100,
-            health: 100,
-            score: 0,
-            weapons: [],
-            currentWeapon: null,
-            loggedIn: false,
-            name: "Jogador",
-            x: 0,
-            y: 0
-        };
+        let saldo = 100;
+        let armaEquipada = null;
 
-        // Inimigo
-        let enemy = {
-            name: "Soldado Inimigo",
-            health: 100,
-            active: false
-        };
-
-        const weaponDamage = {
-            pistol: 10,
-            rifle: 18,
-            sniper: 35,
-            rocket: 50
-        };
-
-        const weaponNames = {
-            pistol: "Pistola",
-            rifle: "Rifle",
-            sniper: "Sniper",
-            rocket: "Lança-Foguete"
-        };
-
-        // Login com Pi
-        function loginWithPi() {
-            document.getElementById('loginStatus').textContent = "Conectando com Pi...";
-            
-            setTimeout(() => {
-                player.loggedIn = true;
-                player.name = "Soldado Pi";
-                document.getElementById('loginStatus').textContent = "✅ Conectado! Bem-vindo, " + player.name;
-                
-                setTimeout(() => {
-                    document.getElementById('loginScreen').classList.add('hidden');
-                    document.getElementById('gameScreen').classList.remove('hidden');
-                    updateUI();
-                }, 1000);
-            }, 1500);
+        function atualizarSaldo() {
+            document.getElementById('balance').textContent = saldo;
         }
 
-        // Comprar ou equipar arma
-        function buyWeapon(type, cost) {
-            if (!player.loggedIn) {
-                alert("Entre com Pi primeiro!");
-                return;
-            }
-
-            if (player.weapons.includes(type)) {
-                player.currentWeapon = type;
-                document.getElementById('currentWeapon').textContent = weaponNames[type];
-                document.getElementById('gameMessage').textContent = "✅ " + weaponNames[type] + " equipada!";
-                return;
-            }
-
-            if (player.piBalance >= cost) {
-                player.piBalance -= cost;
-                player.weapons.push(type);
-                player.currentWeapon = type;
-                document.getElementById('currentWeapon').textContent = weaponNames[type];
-                document.getElementById('gameMessage').textContent = "✅ Comprou e equipou: " + weaponNames[type] + "!";
-                updateUI();
+        function comprar(nome, preco) {
+            if (saldo >= preco) {
+                saldo -= preco;
+                armaEquipada = nome;
+                atualizarSaldo();
+                document.getElementById('armaAtual').textContent = nome;
+                document.getElementById('status').textContent = `Você comprou: ${nome} — Pronto para lutar!`;
             } else {
-                document.getElementById('gameMessage').textContent = "❌ Pi insuficiente!";
+                document.getElementById('status').textContent = 'Saldo insuficiente! Ganhe mais Pi.';
             }
-        }
-
-        // Movimento do jogador
-        function move(direction) {
-            if (!player.loggedIn) return;
-            switch(direction) {
-                case 'up': player.y -= 1; break;
-                case 'down': player.y += 1; break;
-                case 'left': player.x -= 1; break;
-                case 'right': player.x += 1; break;
-            }
-            document.getElementById('gameMessage').textContent = "🚶 Movendo... Posição: (" + player.x + "," + player.y + ")";
-        }
-
-        // Atirar
-        function shoot() {
-            if (!player.loggedIn || !player.currentWeapon) {
-                document.getElementById('gameMessage').textContent = "❌ Precisa de uma arma!";
-                return;
-            }
-            if (!enemy.active) {
-                document.getElementById('gameMessage').textContent = "🎯 Nenhum inimigo à vista!";
-                return;
-            }
-            attackEnemy();
-        }
-
-        // Iniciar batalha
-        function startBattle() {
-            if (!player.loggedIn) {
-                alert("Entre com Pi primeiro!");
-                return;
-            }
-            if (!player.currentWeapon) {
-                document.getElementById('gameMessage').textContent = "❌ Compre uma arma primeiro!";
-                return;
-            }
-
-            enemy.active = true;
-            enemy.health = 100;
-            document.getElementById('enemyArea').classList.remove('hidden');
-            document.getElementById('enemyName').textContent = enemy.name;
-            document.getElementById('enemyHP').textContent = enemy.health;
-
-            document.getElementById('gameMessage').textContent = "⚔️ BATALHA INICIADA! Use os botões para mover e atirar!";
-
-            // Inimigo contra-ataca a cada 2s
-            window.enemyInterval = setInterval(() => {
-                if (enemy.health <= 0 || player.health <= 0) {
-                    clearInterval(window.enemyInterval);
-                    endBattle();
-                    return;
-                }
-                player.health -= Math.floor(Math.random() * 15) + 5;
-                if (player.health < 0) player.health = 0;
-                updateUI();
-                document.getElementById('gameMessage').textContent = "💥 Inimigo atacou!";
-            }, 2000);
-        }
-
-        // Atacar inimigo
-        function attackEnemy() {
-            let damage = weaponDamage[player.currentWeapon];
-            enemy.health -= damage;
-            if (enemy.health < 0) enemy.health = 0;
-
-            document.getElementById('enemyHP').textContent = enemy.health;
-            document.getElementById('gameMessage').textContent = "💥 Dano causado: -" + damage + " HP!";
-            updateUI();
-        }
-
-        // Finalizar batalha
-        function endBattle() {
-            clearInterval(window.enemyInterval);
-            if (enemy.health <= 0) {
-                player.score += 100;
-                player.piBalance += 20;
-                document.getElementById('gameMessage').textContent = "🏆 VITÓRIA! +100 pontos +20 π";
-            } else {
-                document.getElementById('gameMessage').textContent = "💀 DERROTA! Você foi eliminado!";
-            }
-
-            enemy.active = false;
-            document.getElementById('enemyArea').classList.add('hidden');
-            updateUI();
-        }
-
-        // Atualizar interface
-        function updateUI() {
-            document.getElementById('piBalance').textContent = player.piBalance;
-            document.getElementById('health').textContent = player.health;
-            document.getElementById('score').textContent = player.score;
         }
     </script>
 </body>
